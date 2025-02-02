@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta name="referrer" content="no-referrer-when-downgrade">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Connect Four</title>
+	<style>
+		:root {
+			--font-family: Arial, sans-serif;
+			--background-color: #000;
+			--board-background: #0066cc;
+			--cell-size: 60px;
+			--cell-gap: 3px;
+			--border-radius: 5px;
+			--menu-border-radius: 10px;
+			--padding: 20px;
+			--player1-color: #ff4136;
+			--player2-color: #ffdc00;
+			--button-background: #2ecc40;
+			--button-hover: #3d9970;
+			--text-color: #fff;
+			--shadow-color: rgba(255, 255, 255, 0.2);
+			--menu-background: rgba(0, 0, 0, 0.8);
+			--hover-opacity: 0.7;
+			--message-font-size: 1.2em;
+			--button-font-size: 1em;
+			--min-width-game: 300px;
+			--min-width-menu: 250px;
+			--message-height: 1.5em;
+			--button-margin: 10px;
+			--button-padding: 10px var(--padding);
+			--shadow-blur: 20px;
+			--text-shadow-blur: 10px;
+			--box-shadow-blur: 10px;
+			--transition-duration: 0.3s;
+			--hover-red-color: rgba(255, 0, 0, 1);
+			--hover-yellow-color: rgba(255, 255, 0, 1);
+		}
+
+		body {
+			font-family: var(--font-family);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 100vh;
+			margin: 0;
+			background: var(--background-color) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20"><circle cx="10" cy="10" r="0.5" fill="white" /></svg>') repeat;
+		}
+
+		#game-container {
+			background: var(--menu-background);
+			border-radius: var(--menu-border-radius);
+			padding: var(--padding);
+			box-shadow: 0 0 var(--shadow-blur) var(--shadow-color);
+			display: flex;
+			flex-direction: column;
+			min-width: var(--min-width-game);
+		}
+
+		h1 {
+			color: var(--text-color);
+			text-align: center;
+			margin-bottom: var(--padding);
+			text-shadow: 0 0 var(--text-shadow-blur) var(--text-color);
+		}
+
+		#board {
+			display: grid;
+			grid-template-columns: repeat(7, 1fr);
+			gap: var(--cell-gap);
+			background: var(--board-background);
+			padding: var(--border-radius);
+			border-radius: var(--border-radius);
+		}
+
+		.cell-wrapper {
+			width: var(--cell-size);
+			height: var(--cell-size);
+			cursor: pointer;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.cell {
+			width: 100%;
+			height: 100%;
+			background: var(--background-color);
+			border-radius: 50%;
+			transition: background-color var(--transition-duration);
+		}
+
+		.cell.hover-red {
+			background: var(--hover-red-color);
+		}
+
+		.cell.hover-yellow {
+			background: var(--hover-yellow-color);
+		}
+
+		.cell.red {
+			background: var(--player1-color);
+			box-shadow: 0 0 var(--box-shadow-blur) var(--player1-color);
+		}
+
+		.cell.yellow {
+			background: var(--player2-color);
+			box-shadow: 0 0 var(--box-shadow-blur) var(--player2-color);
+		}
+
+		#message {
+			color: var(--text-color);
+			text-align: center;
+			margin-top: var(--padding);
+			font-size: var(--message-font-size);
+			height: var(--message-height);
+		}
+
+		button {
+			display: inline-block;
+			margin: var(--button-margin);
+			padding: var(--button-padding);
+			background: var(--button-background);
+			color: var(--text-color);
+			border: none;
+			border-radius: var(--border-radius);
+			cursor: pointer;
+			font-size: var(--button-font-size);
+			transition: background-color var(--transition-duration);
+		}
+
+		button:hover {
+			background: var(--button-hover);
+		}
+
+		#main-menu {
+			text-align: center;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background: var(--menu-background);
+			border-radius: var(--menu-border-radius);
+			padding: var(--padding);
+			box-shadow: 0 0 var(--shadow-blur) var(--shadow-color);
+			min-width: var(--min-width-menu);
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+		}
+
+		#main-menu h1 {
+			margin-bottom: var(--padding);
+		}
+
+		#game-container {
+			display: none;
+		}
+
+		#game-over-menu {
+			display: none;
+			text-align: center;
+		}
+
+		#game-board {
+			display: block;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="main-menu">
+		<h1>Connect Four</h1>
+		<button id="new-game-button">NEW GAME</button>
+	</div>
+	<div id="game-container">
+		<h1>Connect Four</h1>
+		<div id="game-board">
+			<div id="board"></div>
+			<div id="message"></div>
+		</div>
+		<div id="game-over-menu">
+			<button id="new-game-button-end">NEW GAME</button>
+			<button id="main-menu-button">MAIN MENU</button>
+		</div>
+	</div>
+	<script>
+		const GG_ALL_GAME_CONFIG = {
+			cols: 7, // number of columns in the game board
+			rows: 6, // number of rows in the game board
+			player1Color: 'red', // color for player 1's pieces
+			player2Color: 'yellow', // color for player 2's pieces
+			hoverOpacity: 0.7, // opacity of the hover effect
+			winLength: 4, // number of pieces in a row needed to win
+			boardBackground: '#0066cc', // background color of the game board
+			messageWin: 'wins!', // message to display when a player wins
+			messageDraw: "It's a draw!", // message to display when the game is a draw
+			messageCurrentTurn: "", // message to display for current player's turn
+			newGameText: "NEW GAME", // text for the new game button
+			mainMenuText: "MAIN MENU" // text for the main menu button
+		};
+		let currentPlayer = 1;
+		let board = Array(GG_ALL_GAME_CONFIG.rows).fill().map(() => Array(GG_ALL_GAME_CONFIG.cols).fill(0));
+
+		function showMainMenu() {
+			document.getElementById('main-menu').style.display = 'flex';
+			document.getElementById('game-container').style.display = 'none';
+		}
+
+		function startNewGame() {
+			document.getElementById('main-menu').style.display = 'none';
+			document.getElementById('game-container').style.display = 'block';
+			document.getElementById('game-board').style.display = 'block';
+			document.getElementById('game-over-menu').style.display = 'none';
+			resetGame();
+		}
+
+		function showGameOverMenu() {
+			document.getElementById('game-over-menu').style.display = 'block';
+		}
+
+		function createBoard() {
+			const boardElement = document.getElementById('board');
+			boardElement.innerHTML = '';
+			for (let row = 0; row < GG_ALL_GAME_CONFIG.rows; row++) {
+				for (let col = 0; col < GG_ALL_GAME_CONFIG.cols; col++) {
+					const cellWrapper = document.createElement('div');
+					cellWrapper.className = 'cell-wrapper';
+					cellWrapper.dataset.col = col;
+					cellWrapper.dataset.row = row;
+					const cell = document.createElement('div');
+					cell.className = 'cell';
+					cellWrapper.appendChild(cell);
+					boardElement.appendChild(cellWrapper);
+				}
+			}
+			boardElement.addEventListener('mouseover', handleHover);
+			boardElement.addEventListener('mouseout', handleMouseOut);
+			updateCellSize();
+		}
+
+		function handleHover(e) {
+			if (e.target.classList.contains('cell-wrapper') || e.target.classList.contains('cell')) {
+				const wrapper = e.target.classList.contains('cell-wrapper') ? e.target : e.target.parentElement;
+				const col = parseInt(wrapper.dataset.col);
+				const hoverRow = getLowestEmptyRow(col);
+				if (hoverRow !== -1) {
+					const hoverCell = document.querySelector(`.cell-wrapper[data-row="${hoverRow}"][data-col="${col}"] .cell`);
+					hoverCell.classList.add(currentPlayer === 1 ? 'hover-red' : 'hover-yellow');
+				}
+			}
+		}
+
+		function handleMouseOut(e) {
+			if (e.target.classList.contains('cell-wrapper') || e.target.classList.contains('cell')) {
+				const wrapper = e.target.classList.contains('cell-wrapper') ? e.target : e.target.parentElement;
+				const col = parseInt(wrapper.dataset.col);
+				const hoverRow = getLowestEmptyRow(col);
+				if (hoverRow !== -1) {
+					const hoverCell = document.querySelector(`.cell-wrapper[data-row="${hoverRow}"][data-col="${col}"] .cell`);
+					hoverCell.classList.remove('hover-red', 'hover-yellow');
+				}
+			}
+		}
+
+		function getLowestEmptyRow(col) {
+			for (let row = GG_ALL_GAME_CONFIG.rows - 1; row >= 0; row--) {
+				if (board[row][col] === 0) {
+					return row;
+				}
+			}
+			return -1;
+		}
+
+		function dropPiece(col) {
+			for (let row = GG_ALL_GAME_CONFIG.rows - 1; row >= 0; row--) {
+				if (board[row][col] === 0) {
+					board[row][col] = currentPlayer;
+					return row;
+				}
+			}
+			return -1;
+		}
+
+		function checkWin(row, col) {
+			const directions = [
+				[0, 1],
+				[1, 0],
+				[1, 1],
+				[1, -1]
+			];
+			for (let [dx, dy] of directions) {
+				let count = 1;
+				for (let i = 1; i < GG_ALL_GAME_CONFIG.winLength; i++) {
+					const newRow = row + i * dx;
+					const newCol = col + i * dy;
+					if (newRow < 0 || newRow >= GG_ALL_GAME_CONFIG.rows || newCol < 0 || newCol >= GG_ALL_GAME_CONFIG.cols || board[newRow][newCol] !== currentPlayer) break;
+					count++;
+				}
+				for (let i = 1; i < GG_ALL_GAME_CONFIG.winLength; i++) {
+					const newRow = row - i * dx;
+					const newCol = col - i * dy;
+					if (newRow < 0 || newRow >= GG_ALL_GAME_CONFIG.rows || newCol < 0 || newCol >= GG_ALL_GAME_CONFIG.cols || board[newRow][newCol] !== currentPlayer) break;
+					count++;
+				}
+				if (count >= GG_ALL_GAME_CONFIG.winLength) return true;
+			}
+			return false;
+		}
+
+		function checkDraw() {
+			return board[0].every(cell => cell !== 0);
+		}
+
+		function updateBoard() {
+			const cellWrappers = document.querySelectorAll('.cell-wrapper');
+			for (let row = 0; row < GG_ALL_GAME_CONFIG.rows; row++) {
+				for (let col = 0; col < GG_ALL_GAME_CONFIG.cols; col++) {
+					const index = row * GG_ALL_GAME_CONFIG.cols + col;
+					const cell = cellWrappers[index].querySelector('.cell');
+					cell.className = 'cell';
+					if (board[row][col] === 1) cell.classList.add(GG_ALL_GAME_CONFIG.player1Color);
+					if (board[row][col] === 2) cell.classList.add(GG_ALL_GAME_CONFIG.player2Color);
+				}
+			}
+		}
+
+		function handleClick(e) {
+			const wrapper = e.target.closest('.cell-wrapper');
+			if (!wrapper) return;
+			const col = parseInt(wrapper.dataset.col);
+			const row = dropPiece(col);
+			if (row === -1) return;
+			updateBoard();
+			// Remove hover effect immediately after placing a piece
+			const cells = document.querySelectorAll('.cell');
+			cells.forEach(cell => {
+				cell.classList.remove('hover-red', 'hover-yellow');
+			});
+			if (checkWin(row, col)) {
+				document.getElementById('message').textContent = `Player ${currentPlayer} ${GG_ALL_GAME_CONFIG.messageWin}`;
+				document.getElementById('board').removeEventListener('click', handleClick);
+				document.getElementById('board').removeEventListener('mouseover', handleHover);
+				document.getElementById('board').removeEventListener('mouseout', handleMouseOut);
+				showGameOverMenu();
+			} else if (checkDraw()) {
+				document.getElementById('message').textContent = GG_ALL_GAME_CONFIG.messageDraw;
+				document.getElementById('board').removeEventListener('mouseover', handleHover);
+				document.getElementById('board').removeEventListener('mouseout', handleMouseOut);
+				showGameOverMenu();
+			} else {
+				currentPlayer = currentPlayer === 1 ? 2 : 1;
+				document.getElementById('message').textContent = `Player ${currentPlayer}${GG_ALL_GAME_CONFIG.messageCurrentTurn}`;
+				// Update hover effect for the new current player
+				const hoverRow = getLowestEmptyRow(col);
+				if (hoverRow !== -1) {
+					const hoverCell = document.querySelector(`.cell-wrapper[data-row="${hoverRow}"][data-col="${col}"] .cell`);
+					hoverCell.classList.add(currentPlayer === 1 ? 'hover-red' : 'hover-yellow');
+				}
+			}
+		}
+
+		function resetGame() {
+			board = Array(GG_ALL_GAME_CONFIG.rows).fill().map(() => Array(GG_ALL_GAME_CONFIG.cols).fill(0));
+			currentPlayer = 1;
+			createBoard();
+			updateBoard();
+			document.getElementById('message').textContent = `Player ${currentPlayer}${GG_ALL_GAME_CONFIG.messageCurrentTurn}`;
+			document.getElementById('board').addEventListener('click', handleClick);
+			document.getElementById('board').addEventListener('mouseover', handleHover);
+			document.getElementById('board').addEventListener('mouseout', handleMouseOut);
+		}
+
+		function updateCellSize() {
+			const width = (window.innerWidth - 70) / GG_ALL_GAME_CONFIG.cols - 3;
+			const height = (window.innerHeight - 270) / GG_ALL_GAME_CONFIG.rows - 3;
+			document.documentElement.style.setProperty('--cell-size', `${Math.min(height, width)}px`);
+		}
+
+		addEventListener("resize", updateCellSize);
+
+		document.getElementById('new-game-button').addEventListener('click', startNewGame);
+		document.getElementById('new-game-button-end').addEventListener('click', startNewGame);
+		document.getElementById('main-menu-button').addEventListener('click', showMainMenu);
+
+		showMainMenu();
+	</script>
+
+</body>
+
+</html>
